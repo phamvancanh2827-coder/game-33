@@ -44,7 +44,7 @@
         ruby-align: center;
       }
 
-      /* Animation riêng cho hiệu ứng nhảy qua chướng ngại vật */
+      /* Animation nhảy qua chướng ngại vật */
       @keyframes mario-jump {
         0% { transform: translateY(0) scale(1); }
         30% { transform: translateY(-130px) scale(1.05); }
@@ -64,15 +64,20 @@
         animation: obstacle-slide 1.2s linear forwards;
       }
 
-      /* Thiết kế Nút bấm nổi */
+      /* Nút bấm nổi */
       .game-btn {
         box-shadow: 0px 6px 0px rgba(0,0,0,0.3);
         transition: all 0.1s;
       }
-      .game-btn:active {
+      .game-btn:active:not(:disabled) {
         box-shadow: 0px 0px 0px rgba(0,0,0,0.3);
         transform: translateY(6px);
       }
+      
+      /* Thanh cuộn cho phần xem lại */
+      .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.4); border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -83,8 +88,9 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- BỘ CÂU HỎI (60 CÂU - ĐÃ BỔ SUNG FULL FURIGANA) ---
+        // --- BỘ CÂU HỎI (70 CÂU) - VỊ TRÍ ĐÁP ÁN SẼ ĐƯỢC RANDOM TỰ ĐỘNG ---
         const quizData = [
+          // 60 CÂU CŨ
           { q: 'Từ vựng: "Chạy trốn" tiếng Nhật là gì?', options: ["{逃|に}げます", "{騒|さわ}ぎます", "{諦|あきら}めます", "{投|な}げます"], a: 0 },
           { q: 'Từ vựng: "Làm ồn" tiếng Nhật là gì?', options: ["{投|な}げます", "{騒|さわ}ぎます", "{守|まも}ります", "{伝|つた}えます"], a: 1 },
           { q: 'Từ vựng: "Từ bỏ" tiếng Nhật là gì?', options: ["{注意|ちゅうい}します", "{外|はず}します", "{戻|もど}ります", "{諦|あきら}めます"], a: 3 },
@@ -146,45 +152,62 @@
           { q: 'Chuyển sang Thể cấm chỉ: "{忘|わす}れます" (Quên)', options: ["{忘|わす}れない", "{忘|わす}れな", "{忘|わす}れるな", "{忘|わす}れろな"], a: 2 },
           { q: 'Chuyển sang Thể cấm chỉ: "{止|と}めます" (Dừng xe)', options: ["{止|と}めるな", "{止|と}めない", "{止|と}めな", "{止|と}めろな"], a: 0 },
           { q: 'Chuyển sang Thể cấm chỉ: "{飲|の}みます" (Uống)', options: ["{飲|の}まない", "{飲|の}むな", "{飲|の}まな", "{飲|の}めな"], a: 1 },
-          { q: 'Ý nghĩa của câu: "{早|はや}く {起|お}きろ。"', options: ["Hãy ngủ sớm.", "Hãy thức dậy sớm.", "Không được ngủ.", "Không được thức dậy."], a: 1 },
-          { q: 'Ý nghĩa của câu: "エレベーターを {使|つか}うな。"', options: ["Hãy dùng thang máy.", "Không được dùng thang máy.", "Hãy sửa thang máy.", "Không được sửa thang máy."], a: 1 },
-          { q: 'Nói nhẹ nhàng hơn với tư cách bề trên: "{早|はや}く {寝|ね}ろ"', options: ["{早|はや}く{寝|ね}るな", "{早|はや}く{寝|ね}てくれ", "{早|はや}く{寝|ね}なさい", "{早|はや}く{寝|ね}ないでください"], a: 2 },
-          { q: 'Nói cấm đoán nhẹ nhàng hơn ở xưởng: "{少|すこ}し {手伝|てつだ}って"', options: ["{手伝|てつだ}いなさい", "{手伝|てつだ}ってくれ", "{手伝|てつだ}うな", "{手伝|てつだ}え"], a: 1 }
+          { q: 'Ý nghĩa của câu: "{早|はや}く {起|お}きろ。"', options: ["Hãy thức dậy sớm.", "Hãy ngủ sớm.", "Không được ngủ.", "Không được thức dậy."], a: 0 },
+          { q: 'Ý nghĩa của câu: "エレベーターを {使|つか}うな。"', options: ["Không được dùng thang máy.", "Hãy dùng thang máy.", "Hãy sửa thang máy.", "Không được sửa thang máy."], a: 0 },
+          { q: 'Nói nhẹ nhàng hơn với tư cách bề trên: "{早|はや}く {寝|ね}ろ"', options: ["{早|はや}く{寝|ね}なさい", "{早|はや}く{寝|ね}るな", "{早|はや}く{寝|ね}てくれ", "{早|はや}く{寝|ね}ないでください"], a: 0 },
+          { q: 'Nói cấm đoán nhẹ nhàng hơn ở xưởng: "{少|すこ}し {手伝|てつだ}って"', options: ["{手伝|てつだ}ってくれ", "{手伝|てつだ}いなさい", "{手伝|てつだ}うな", "{手伝|てつだ}え"], a: 0 },
+          
+          // BỔ SUNG 10 CÂU MỚI (Lên mốc 70 câu)
+          { q: 'Kanji của từ "Cảnh sát" là gì?', options: ["{警察|けいさつ}", "警さつ", "けい察", "敬察"], a: 0 },
+          { q: 'Ý nghĩa của biển báo "{営業中|えいぎょうちゅう}" là gì?', options: ["Đang mở cửa", "Đang đóng cửa", "Đang chuẩn bị", "Đang tuyển người"], a: 0 },
+          { q: 'Ý nghĩa của biển báo "{準備中|じゅんびちゅう}" là gì?', options: ["Đang chuẩn bị", "Đang mở cửa", "Cấm sử dụng", "Miễn phí"], a: 0 },
+          { q: 'Ý nghĩa của biển báo "{定休日|ていきゅうび}" là gì?', options: ["Ngày nghỉ định kỳ", "Ngày lễ", "Ngày làm việc", "Giảm giá"], a: 0 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{頑張|がんば}ります" (Cố gắng)', options: ["{頑張|がんば}れ", "{頑張|がんば}ろ", "{頑張|がんば}るな", "{頑張|がんば}って"], a: 0 },
+          { q: 'Chuyển sang Thể mệnh lệnh: "{走|はし}ります" (Chạy)', options: ["{走|はし}れ", "{走|はし}ろ", "{走|はし}るな", "{走|はし}らな"], a: 0 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{諦|あきら}めます" (Từ bỏ)', options: ["{諦|あきら}めるな", "{諦|あきら}めない", "{諦|あきら}めろな", "{諦|あきら}めな"], a: 0 },
+          { q: 'Chuyển sang Thể cấm chỉ: "{心配|しんぱい}します" (Lo lắng)', options: ["{心配|しんぱい}するな", "{心配|しんぱい}しない", "{心配|しんぱい}しな", "{心配|しんぱい}しろな"], a: 0 },
+          { q: 'Khi cổ vũ thể thao, người Nhật thường hô to:', options: ["{頑張|がんば}れ", "{頑張|がんば}るな", "{頑張|がんば}って", "{頑張|がんば}ります"], a: 0 },
+          { q: 'Bố mẹ mắng con cái: "Phải học nhiều hơn đi!"', options: ["もっと {勉強|べんきょう}しろ", "もっと {勉強|べんきょう}するな", "もっと {勉強|べんきょう}します", "もっと {勉強|べんきょう}して"], a: 0 }
         ];
 
-        // --- CẤU TRÚC CỐT TRUYỆN (STORY MODULE) ---
+        // --- CẤU TRÚC CỐT TRUYỆN 70 CÂU (6 CHẶNG) ---
         const getStoryContent = (level) => {
             switch(level) {
                 case 1: return { 
                     title: "CHẶNG 1", 
-                    desc: "Bạn đã an toàn đánh bại Quái thú và vượt qua Rừng Từ Vựng 🍄. Giữ vững phong độ nhé!", 
-                    icon: "🍄", bg: "bg-green-600" 
+                    desc: "Bạn đã an toàn đánh bại Quái thú và vượt qua Rừng Nấm Khổng Lồ. Giữ vững phong độ nhé!", 
+                    icon: <MushroomSVG width="120" />, bg: "bg-green-600" 
                 };
                 case 2: return { 
                     title: "CHẶNG 2", 
-                    desc: "Cái nóng của Sa mạc Cấm Chỉ 🌵 không cản được bước chân bạn. Đi tiếp thôi!", 
-                    icon: "🌵", bg: "bg-yellow-600" 
+                    desc: "Cái nóng của Sa mạc Cấm Chỉ không cản được bước chân bạn. Đi tiếp thôi!", 
+                    icon: <CactusSVG width="100" />, bg: "bg-yellow-600" 
                 };
                 case 3: return { 
                     title: "CHẶNG 3", 
-                    desc: "Bạn vừa lướt qua Vịnh Nước Xoáy 🌊 một cách ngoạn mục! Chúng ta đã đi được nửa đường rồi!", 
-                    icon: "🐢", bg: "bg-blue-600" 
+                    desc: "Bạn vừa lướt qua Vịnh Nước Xoáy một cách ngoạn mục! Chúng ta đang đi đúng hướng!", 
+                    icon: <ShellSVG width="120" />, bg: "bg-blue-600" 
                 };
                 case 4: return { 
                     title: "CHẶNG 4", 
-                    desc: "Tuyệt vời! Bạn đã leo qua Đỉnh Núi Mệnh Lệnh ⛰️. Lâu đài của kẻ thù đã ở rất gần!", 
-                    icon: "🪨", bg: "bg-gray-600" 
+                    desc: "Tuyệt vời! Bạn đã leo qua Đỉnh Núi Mệnh Lệnh. Vẫn còn chông gai phía trước!", 
+                    icon: <RockSVG width="120" />, bg: "bg-gray-600" 
                 };
                 case 5: return { 
                     title: "CHẶNG 5", 
-                    desc: "Cổng Lâu đài Hắc Ám 🏰 đã bị phá vỡ! Trang bị vũ khí và sẵn sàng đối đầu với Trùm Cuối nào!", 
-                    icon: "🔥", bg: "bg-purple-800" 
+                    desc: "Cổng Lâu đài Hắc Ám đã bị phá vỡ! Trang bị vũ khí và tiến vào sào huyệt!", 
+                    icon: <FireballSVG width="120" />, bg: "bg-orange-600" 
+                };
+                case 6: return { 
+                    title: "CHẶNG 6", 
+                    desc: "Trùm cuối thả ra vô số Ma Quỷ để cản đường! Hãy tỉnh táo và tiến đến giải cứu Công chúa!", 
+                    icon: <GhostSVG width="120" />, bg: "bg-indigo-900" 
                 };
                 default: return { title: "", desc: "", icon: "", bg: "bg-[#5c94fc]" };
             }
         }
 
-        // --- HÌNH ẢNH SVG THEO PHONG CÁCH PIXEL ---
+        // --- HÌNH ẢNH SVG PIXEL ART 100% (KHÔNG DÙNG EMOJI) ---
         const PixelArt = ({ pixels, colorMap, width = "60" }) => {
            const h = pixels.length;
            const w = pixels[0].length;
@@ -224,24 +247,84 @@
           return <PixelArt pixels={pixels} colorMap={colorMap} width="80" />;
         };
 
-        // Các chướng ngại vật thay đổi theo cấp độ
-        const MushroomSVG = () => <PixelArt width="50" colorMap={{ 'R': '#E52521', 'W': '#FFFFFF', 'F': '#FFCC99', 'K': '#000000' }} pixels={[
+        const HeartSVG = ({ width="24" }) => {
+          const pixels = [
+            "  RR  RR  ",
+            " RRRRRRRR ",
+            " RRRWWRRR ",
+            " RRRRRRRR ",
+            "  RRRRRR  ",
+            "   RRRR   ",
+            "    RR    "
+          ];
+          const colorMap = { 'R': '#ef4444', 'W': '#ffffff' };
+          return <PixelArt pixels={pixels} colorMap={colorMap} width={width} />;
+        };
+
+        const PrincessSVG = ({ width="100" }) => {
+          const pixels = [
+            "   YYYYY   ",
+            "  YYYYYYY  ",
+            "  YYSSSYY  ",
+            "  YSESESY  ",
+            "  YSSRSSY  ",
+            "   SSSSS   ",
+            "   PPPPP   ",
+            "  PPPPPPP  ",
+            "  PPPPPPP  ",
+            " PPPPPPPPP ",
+            "PPPPPPPPPPP",
+            "RRRRRRRRRRR"
+          ];
+          const colorMap = { 'Y': '#fde047', 'P': '#f472b6', 'S': '#fecdd3', 'E': '#000000', 'R': '#e11d48' };
+          return <PixelArt pixels={pixels} colorMap={colorMap} width={width} />;
+        };
+
+        const LightbulbSVG = ({ width="20" }) => {
+          const pixels = [
+            "  YYY  ",
+            " YYYYY ",
+            " YYYYY ",
+            "  YYY  ",
+            "  WWW  ",
+            "  WWW  "
+          ];
+          const colorMap = { 'Y': '#facc15', 'W': '#ffffff' };
+          return <PixelArt pixels={pixels} colorMap={colorMap} width={width} />;
+        }
+
+        const CrossSVG = ({ width="50" }) => {
+          const pixels = [
+            " R      R ",
+            "  R    R  ",
+            "   R  R   ",
+            "    RR    ",
+            "   R  R   ",
+            "  R    R  ",
+            " R      R "
+          ];
+          const colorMap = { 'R': '#ef4444' };
+          return <PixelArt pixels={pixels} colorMap={colorMap} width={width} />;
+        }
+
+        // Chướng ngại vật thay đổi theo từng cấp
+        const MushroomSVG = ({width="50"}) => <PixelArt width={width} colorMap={{ 'R': '#E52521', 'W': '#FFFFFF', 'F': '#FFCC99', 'K': '#000000' }} pixels={[
             "   RRRR   ", "  RRRRRR  ", " RRRWWRRR ", " RRWWWWWW ", " RRRRRRRR ", "   FFFF   ", "  FFKKFF  ", "   FFFF   "
         ]} />;
-        const CactusSVG = () => <PixelArt width="40" colorMap={{ 'C': '#22c55e', 'D': '#166534' }} pixels={[
+        const CactusSVG = ({width="40"}) => <PixelArt width={width} colorMap={{ 'C': '#22c55e', 'D': '#166534' }} pixels={[
             "   CC   ", " C CC   ", " C CC   ", " C CCCC ", " C CC C ", "   CC C ", "   CC   ", "   CC   "
         ]} />;
-        const ShellSVG = () => <PixelArt width="50" colorMap={{ 'G': '#16a34a', 'K': '#000000', 'W': '#ffffff' }} pixels={[
+        const ShellSVG = ({width="50"}) => <PixelArt width={width} colorMap={{ 'G': '#16a34a', 'K': '#000000', 'W': '#ffffff' }} pixels={[
             "   GGGG   ", " GGGGGGGG ", " GKKGGKKG ", " GGGGGGGG ", "WWWWWWWWWW", " W W  W W "
         ]} />;
-        const RockSVG = () => <PixelArt width="50" colorMap={{ 'A': '#64748b', 'B': '#475569' }} pixels={[
+        const RockSVG = ({width="50"}) => <PixelArt width={width} colorMap={{ 'A': '#64748b', 'B': '#475569' }} pixels={[
             "   AAAA   ", "  ABBAAA  ", " AABBAAAA ", " AAAABBAA ", "AAAAAAAAAA"
         ]} />;
-        const FireballSVG = () => <PixelArt width="50" colorMap={{ 'R': '#ef4444', 'Y': '#facc15' }} pixels={[
+        const FireballSVG = ({width="50"}) => <PixelArt width={width} colorMap={{ 'R': '#ef4444', 'Y': '#facc15' }} pixels={[
             "   RR   ", "  RYYR  ", " RYYYYR ", " RYYYYR ", "  RYYR  ", "   RR   "
         ]} />;
-        const StarSVG = () => <PixelArt width="50" colorMap={{ 'Y': '#fef08a', 'O': '#eab308', 'K': '#000000' }} pixels={[
-            "    YY    ", "   YYYY   ", "YYYYYYYYYY", " YYYKKYYY ", "  YYYYYY  ", " YYY  YYY ", " YY    YY "
+        const GhostSVG = ({width="50"}) => <PixelArt width={width} colorMap={{ 'W': '#ffffff', 'K': '#000000' }} pixels={[
+            "  WWWW  ", " WWWWWW ", "WKWKKWWW", "WWWWWWWW", " WWWWWW ", "W W  W W"
         ]} />;
 
         const getObstacleSVG = (level) => {
@@ -251,13 +334,13 @@
              case 3: return <ShellSVG />;
              case 4: return <RockSVG />;
              case 5: return <FireballSVG />;
-             case 6: return <StarSVG />;
+             case 6: return <GhostSVG />;
              default: return <MushroomSVG />;
           }
         }
 
-        const CoinSVG = () => (
-          <svg viewBox="0 0 24 24" className="w-8 h-8 inline-block animate-spin-slow drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
+        const CoinSVG = ({ width="32" }) => (
+          <svg viewBox="0 0 24 24" width={width} height={width} className="inline-block animate-spin-slow drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
             <circle cx="12" cy="12" r="10" fill="#FDE047" stroke="#B45309" strokeWidth="2" />
             <rect x="10" y="6" width="4" height="12" fill="#B45309" rx="1" />
           </svg>
@@ -305,11 +388,18 @@
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
             gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
             osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.8);
+          } else if (type === 'gameover') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 1.2);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 1.2);
           }
         };
 
         // --- BỘ PHÂN TÍCH FURIGANA ---
-        // isAnswer = false (câu hỏi: chữ ĐEN), isAnswer = true (đáp án: chữ TRẮNG có viền)
+        // isAnswer = false (câu hỏi: chữ ĐEN), isAnswer = true (đáp án: chữ TRẮNG có viền đen)
         const parseText = (text, isAnswer = false) => {
           if (typeof text !== 'string') return text;
           const parts = text.split(/(\{.*?\})/g);
@@ -340,25 +430,64 @@
           const [questions, setQuestions] = useState([]);
           const [currentQ, setCurrentQ] = useState(0);
           const [score, setScore] = useState(0);
+          
+          const [lives, setLives] = useState(5);
+          const [helps, setHelps] = useState(5);
+          const [disabledOptions, setDisabledOptions] = useState([]); 
+
           const [selectedAns, setSelectedAns] = useState(null);
           const [isAnimating, setIsAnimating] = useState(false);
           const [feedback, setFeedback] = useState(null); 
           const [storyLevel, setStoryLevel] = useState(0);
+          
+          const [wrongAnswersList, setWrongAnswersList] = useState([]); // Lưu các câu trả lời sai
 
           const startGame = () => {
             playSound('start');
-            const shuffled = [...quizData].sort(() => 0.5 - Math.random());
-            setQuestions(shuffled);
+            
+            // Xáo trộn Câu Hỏi VÀ Đáp Án Tự Động (Giải quyết triệt để lỗi phân bổ tập trung vào A và B)
+            const shuffledQs = quizData.map(q => {
+              // B1: Gắn cờ (flag) cho đáp án đúng ban đầu
+              const optsWithFlag = q.options.map((opt, idx) => ({ text: opt, isCorrect: idx === q.a }));
+              // B2: Xáo trộn mảng 4 đáp án này
+              const shuffledOpts = optsWithFlag.sort(() => 0.5 - Math.random());
+              // B3: Cập nhật lại chỉ số (index) của đáp án đúng sau khi đã xáo trộn
+              const newCorrectIdx = shuffledOpts.findIndex(o => o.isCorrect);
+              return {
+                q: q.q,
+                options: shuffledOpts.map(o => o.text),
+                a: newCorrectIdx
+              };
+            }).sort(() => 0.5 - Math.random()); // Cuối cùng xáo trộn thứ tự các câu hỏi
+
+            setQuestions(shuffledQs);
             setCurrentQ(0);
             setScore(0);
+            setLives(5);
+            setHelps(5);
+            setDisabledOptions([]);
             setStoryLevel(0);
+            setWrongAnswersList([]); // Reset danh sách sai
             setGameState('playing');
             setFeedback(null);
             setSelectedAns(null);
           };
 
+          const handleHelp = () => {
+            if (helps <= 0 || isAnimating || disabledOptions.length > 0) return;
+            
+            playSound('coin'); 
+            setHelps(prev => prev - 1);
+            
+            const correctAns = questions[currentQ].a;
+            const wrongAns = [0, 1, 2, 3].filter(i => i !== correctAns);
+            const shuffledWrongs = wrongAns.sort(() => 0.5 - Math.random());
+            
+            setDisabledOptions([shuffledWrongs[0], shuffledWrongs[1]]); 
+          };
+
           const handleAnswer = (index) => {
-            if (isAnimating) return;
+            if (isAnimating || disabledOptions.includes(index)) return;
             
             setSelectedAns(index);
             setIsAnimating(true);
@@ -371,17 +500,32 @@
               setScore(score + 10);
             } else {
               playSound('wrong');
+              setLives(prev => prev - 1);
+              
+              // Lưu lại câu trả lời sai
+              setWrongAnswersList(prev => [...prev, {
+                q: questions[currentQ].q,
+                userAns: questions[currentQ].options[index],
+                correctAns: questions[currentQ].options[questions[currentQ].a]
+              }]);
             }
 
             setTimeout(() => {
               setFeedback(null);
               setIsAnimating(false);
               setSelectedAns(null);
+              setDisabledOptions([]); 
               
+              if (!isCorrect && lives <= 1) {
+                playSound('gameover');
+                setGameState('gameover');
+                return;
+              }
+
               if (currentQ < questions.length - 1) {
                 const nextQ = currentQ + 1;
-                // Mỗi 10 câu thì qua màn
-                if (nextQ % 10 === 0 && nextQ < 60) {
+                // Chặng mới cứ mỗi 10 câu. Cứu công chúa ở câu thứ 70.
+                if (nextQ % 10 === 0 && nextQ < 70) {
                     setStoryLevel(nextQ / 10);
                     playSound('levelup');
                     setGameState('story');
@@ -400,7 +544,6 @@
               setGameState('playing');
           };
 
-          // Xác định Cấp độ hiện tại để hiện đúng Chướng ngại vật
           const currentStageNumber = Math.floor(currentQ / 10) + 1;
 
           return (
@@ -416,30 +559,30 @@
               {/* MÀN HÌNH BẮT ĐẦU */}
               {gameState === 'start' && (
                 <div className="flex-1 flex flex-col items-center justify-center z-10 text-white drop-shadow-[2px_2px_0_#000] p-4 text-center">
-                  <div className="text-6xl mb-2 animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">👸🏻</div>
+                  <div className="mb-6 animate-bounce"><PrincessSVG width="100"/></div>
                   <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 text-center text-[#f8d070] tracking-wider stroke-black stroke-2">
                     SUPER MINNA QUIZ
                   </h1>
                   <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Công chúa Minna đã bị bắt cóc!</h2>
                   <p className="text-base sm:text-lg max-w-md mx-auto mb-8 text-gray-200 font-medium leading-relaxed">
-                    Hãy vượt qua 6 chặng đường gian nan của Bài 33 để giải cứu Công chúa nhé!
+                    Hãy vượt qua 70 thử thách của Bài 33 để giải cứu Công chúa nhé!
                   </p>
                   <MarioSVG isSad={false} />
                   <button 
                     onClick={startGame}
                     className="mt-8 px-8 py-5 bg-[#E52521] text-white font-black text-xl sm:text-3xl rounded-xl game-btn border-4 border-red-950"
                   >
-                    ▶ BẮT ĐẦU GIẢI CỨU
+                    BẮT ĐẦU GIẢI CỨU
                   </button>
                 </div>
               )}
 
-              {/* MÀN HÌNH CỐT TRUYỆN (LÊN CẤP) */}
+              {/* MÀN HÌNH CỐT TRUYỆN */}
               {gameState === 'story' && (() => {
                   const story = getStoryContent(storyLevel);
                   return (
                     <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center text-white drop-shadow-[2px_2px_0_#000] p-4 ${story.bg}`}>
-                        <div className="text-8xl sm:text-9xl mb-6 animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
+                        <div className="mb-6 animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
                             {story.icon}
                         </div>
                         <h1 className="text-4xl sm:text-5xl font-black mb-6 text-center text-[#FDE047] stroke-black stroke-2">
@@ -452,7 +595,7 @@
                             onClick={continueGame}
                             className="px-8 py-4 bg-white text-black font-black text-lg sm:text-2xl rounded-xl game-btn border-4 border-gray-400 drop-shadow-none"
                         >
-                            Tiếp tục hành trình ▶
+                            TIẾP TỤC HÀNH TRÌNH
                         </button>
                     </div>
                   );
@@ -462,23 +605,42 @@
               {gameState === 'playing' && (
                 <>
                   {/* Header Stats */}
-                  <div className="shrink-0 flex justify-between p-3 sm:p-5 font-bold text-white text-sm sm:text-xl drop-shadow-[2px_2px_0_#000] bg-black/20 z-20">
-                    <div className="flex flex-col items-center">
-                      <span>ĐIỂM</span>
-                      <span className="text-[#FDE047]">{score.toString().padStart(6, '0')}</span>
+                  <div className="shrink-0 flex justify-between items-center p-2 sm:p-4 font-bold text-white text-[11px] sm:text-base drop-shadow-[2px_2px_0_#000] bg-black/40 z-20 border-b-4 border-black/50">
+                    
+                    <div className="flex flex-col items-center gap-1">
+                      <span>MẠNG</span>
+                      <span className="flex items-center gap-[2px]">
+                        <HeartSVG width="16" /> x{lives}
+                      </span>
                     </div>
-                    <div className="flex flex-col items-center">
+
+                    <div className="flex flex-col items-center gap-1">
+                      <span>TRỢ GIÚP</span>
+                      <button 
+                        onClick={handleHelp}
+                        disabled={helps <= 0 || disabledOptions.length > 0 || isAnimating}
+                        className={`px-3 py-1 rounded transition-all border-2 border-white drop-shadow-none shadow-sm flex items-center gap-1
+                          ${helps > 0 && disabledOptions.length === 0 ? 'bg-blue-600 hover:bg-blue-500 active:scale-95' : 'bg-gray-600 opacity-50 cursor-not-allowed'}
+                        `}
+                      >
+                        <LightbulbSVG width="14" /> x{helps}
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1">
                       <span>CÂU HỎI</span>
                       <span>{currentQ + 1}/{questions.length}</span>
                     </div>
-                    <div className="flex flex-col items-center">
-                      <span>TIỀN XU</span>
-                      <span className="flex items-center gap-1 text-[#FDE047]"><CoinSVG /> x{score / 10}</span>
+                    
+                    <div className="flex flex-col items-center gap-1">
+                      <span>ĐIỂM</span>
+                      <span className="text-[#FDE047]">{score.toString().padStart(6, '0')}</span>
                     </div>
+
                   </div>
 
                   {/* Thanh Tiến Độ */}
-                  <div className="shrink-0 w-full bg-black/50 h-2 sm:h-3 overflow-hidden z-20">
+                  <div className="shrink-0 w-full bg-black/50 h-1 sm:h-2 overflow-hidden z-20">
                     <div 
                       className="bg-[#00a800] h-full transition-all duration-300"
                       style={{ width: `${((currentQ) / questions.length) * 100}%` }}
@@ -488,7 +650,6 @@
                   {/* Phần Câu Hỏi & Đáp Án */}
                   <div className="flex-1 flex flex-col justify-center w-[95%] sm:w-[90%] mx-auto z-20 py-2">
                     
-                    {/* BẢNG CÂU HỎI (Furigana ĐEN) */}
                     <div className="relative bg-[#f8d070] border-4 border-[#c84c0c] p-4 sm:p-6 rounded-xl shadow-[inset_0_-6px_0_rgba(0,0,0,0.2)] text-center shrink-0">
                       <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#E52521] text-white px-5 py-2 rounded-full font-bold border-2 border-black drop-shadow-md text-sm sm:text-base">
                         ?
@@ -498,31 +659,29 @@
                       </h2>
                     </div>
 
-                    {/* GRID ĐÁP ÁN (Furigana TRẮNG) */}
                     <div className="grid grid-cols-2 gap-3 sm:gap-5 mt-5 sm:mt-8 shrink-0">
                       {questions[currentQ].options.map((opt, i) => (
                         <button
                           key={i}
                           onClick={() => handleAnswer(i)}
-                          disabled={isAnimating}
+                          disabled={isAnimating || disabledOptions.includes(i)}
                           className={`
                             p-3 sm:p-5 font-bold text-lg sm:text-2xl md:text-3xl rounded-xl border-4 transition-all duration-150 flex items-center justify-center min-h-[70px] sm:min-h-[90px] tracking-wide game-btn
-                            ${!isAnimating ? 'bg-[#d27d2d] border-[#8b4513] text-white hover:bg-[#e68a32]' : ''}
+                            ${disabledOptions.includes(i) ? 'opacity-20 grayscale cursor-not-allowed bg-gray-500 border-gray-800 text-transparent drop-shadow-none' : ''}
+                            ${!isAnimating && !disabledOptions.includes(i) ? 'bg-[#d27d2d] border-[#8b4513] text-white hover:bg-[#e68a32]' : ''}
                             ${isAnimating && selectedAns === i && feedback === 'correct' ? 'bg-[#00a800] border-[#004d00] text-white scale-105' : ''}
                             ${isAnimating && selectedAns === i && feedback === 'wrong' ? 'bg-red-600 border-red-900 text-white' : ''}
                             ${isAnimating && selectedAns !== i && questions[currentQ].a === i ? 'bg-[#00a800] border-[#004d00] text-white animate-pulse' : ''}
-                            ${isAnimating && selectedAns !== i && questions[currentQ].a !== i ? 'bg-gray-500 border-gray-700 text-gray-300 opacity-60' : ''}
+                            ${isAnimating && selectedAns !== i && questions[currentQ].a !== i && !disabledOptions.includes(i) ? 'bg-gray-500 border-gray-700 text-gray-300 opacity-60' : ''}
                           `}
                         >
-                          <span className="inline-block w-full text-center leading-loose">{parseText(opt, true)}</span>
+                          <span className={`inline-block w-full text-center leading-loose ${disabledOptions.includes(i) ? 'invisible' : ''}`}>{parseText(opt, true)}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* VÙNG HOẠT ẢNH: MARIO VÀ CHƯỚNG NGẠI VẬT */}
-                  
-                  {/* Mario */}
                   <div className={`absolute bottom-[110px] left-4 sm:left-10 z-30 pointer-events-none hidden sm:block
                     ${feedback === 'correct' ? 'animate-mario-jump' : ''}
                     ${feedback === 'wrong' ? 'scale-90 opacity-80 grayscale' : ''}
@@ -530,27 +689,57 @@
                     <MarioSVG isSad={feedback === 'wrong'} />
                   </div>
 
-                  {/* Chướng ngại vật thay đổi theo chặng (Trượt qua khi trả lời đúng) */}
                   {feedback === 'correct' && (
                     <div className="absolute bottom-[110px] left-4 sm:left-10 z-20 pointer-events-none animate-obstacle-slide hidden sm:block flex items-end">
                         {getObstacleSVG(currentStageNumber)}
                     </div>
                   )}
 
-                  {/* Animation Cộng Điểm */}
                   {feedback === 'correct' && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-bounce text-[#FDE047] font-black text-5xl sm:text-6xl drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
-                      +10 🪙
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-bounce flex items-center gap-2 text-[#FDE047] font-black text-5xl sm:text-6xl drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
+                      +10 <CoinSVG width="48" />
                     </div>
                   )}
                   
-                  {/* Animation Sai */}
                   {feedback === 'wrong' && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse text-red-500 font-black text-6xl sm:text-7xl drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
-                      ❌
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
+                      <CrossSVG width="80" />
                     </div>
                   )}
                 </>
+              )}
+
+              {/* MÀN HÌNH GAME OVER */}
+              {gameState === 'gameover' && (
+                <div className="flex-1 flex flex-col items-center justify-center z-50 text-white drop-shadow-[2px_2px_0_#000] bg-red-900/90 backdrop-blur-md p-4">
+                  <div className="mb-6 grayscale"><MarioSVG isSad={true} /></div>
+                  <h1 className="text-4xl sm:text-6xl font-black mb-6 text-[#FDE047] text-center leading-snug stroke-black stroke-2">
+                    GAME OVER!
+                  </h1>
+                  
+                  <div className="bg-[#f8d070] border-4 border-[#c84c0c] p-6 sm:p-8 rounded-xl text-center text-black drop-shadow-none shadow-xl mb-8 w-full max-w-md">
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-4">Bạn đã hết mạng!</h2>
+                    <p className="text-lg sm:text-xl font-bold mb-2">Dừng chân ở câu: {currentQ + 1} / {questions.length}</p>
+                    <p className="text-3xl sm:text-4xl font-black mt-4 text-[#E52521]">ĐIỂM: {score}</p>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {wrongAnswersList.length > 0 && (
+                      <button 
+                        onClick={() => setGameState('review')}
+                        className="px-6 py-4 bg-yellow-400 text-black font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-yellow-600 drop-shadow-none"
+                      >
+                        👀 XEM LẠI CÂU SAI
+                      </button>
+                    )}
+                    <button 
+                      onClick={startGame}
+                      className="px-6 py-4 bg-white text-red-700 font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-gray-300 drop-shadow-none"
+                    >
+                      🔄 THỬ LẠI TỪ ĐẦU
+                    </button>
+                  </div>
+                </div>
               )}
 
               {/* MÀN HÌNH KẾT THÚC CÓ CÔNG CHÚA */}
@@ -558,31 +747,77 @@
                 <div className="flex-1 flex flex-col items-center justify-center z-50 text-white drop-shadow-[2px_2px_0_#000] bg-pink-600 backdrop-blur-md p-4">
                   <div className="flex items-end justify-center gap-6 mb-6">
                     <MarioSVG isSad={false} />
-                    <div className="text-7xl sm:text-8xl animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">👸🏻</div>
+                    <div className="animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]"><PrincessSVG width="120" /></div>
                   </div>
                   
                   <h1 className="text-4xl sm:text-5xl font-black mb-6 text-[#FDE047] text-center leading-snug stroke-black stroke-2">
                     BẠN ĐÃ CỨU ĐƯỢC CÔNG CHÚA!
                   </h1>
                   
-                  <div className="bg-[#f8d070] border-4 border-[#c84c0c] p-6 sm:p-8 rounded-xl text-center text-black drop-shadow-none shadow-xl mb-10 w-full max-w-md">
+                  <div className="bg-[#f8d070] border-4 border-[#c84c0c] p-6 sm:p-8 rounded-xl text-center text-black drop-shadow-none shadow-xl mb-8 w-full max-w-md">
                     <h2 className="text-xl sm:text-2xl font-bold mb-4">TỔNG KẾT KHÓA HUẤN LUYỆN</h2>
                     <p className="text-4xl sm:text-5xl font-black mb-4 text-[#E52521]">ĐIỂM: {score}</p>
-                    <p className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-4 mt-4 text-[#B45309]">
-                      <CoinSVG /> ĐÃ THU THẬP: {score / 10} XU
-                    </p>
+                    <p className="text-lg sm:text-xl font-bold mb-2 text-[#00a800]">Vẫn còn {lives} mạng!</p>
                   </div>
                   
-                  <button 
-                    onClick={startGame}
-                    className="px-8 py-5 bg-white text-pink-600 font-black text-xl sm:text-2xl rounded-xl game-btn border-4 border-gray-300 drop-shadow-none"
-                  >
-                    🔄 CHƠI LẠI TỪ ĐẦU
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {wrongAnswersList.length > 0 && (
+                      <button 
+                        onClick={() => setGameState('review')}
+                        className="px-6 py-4 bg-yellow-400 text-black font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-yellow-600 drop-shadow-none"
+                      >
+                        👀 XEM LẠI CÂU SAI
+                      </button>
+                    )}
+                    <button 
+                      onClick={startGame}
+                      className="px-6 py-4 bg-white text-pink-600 font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-gray-300 drop-shadow-none"
+                    >
+                      🔄 CHƠI LẠI TỪ ĐẦU
+                    </button>
+                  </div>
                 </div>
               )}
 
-              {/* MẶT ĐẤT (GROUND) */}
+              {/* MÀN HÌNH XEM LẠI CÂU SAI */}
+              {gameState === 'review' && (
+                <div className="flex-1 flex flex-col z-50 text-white p-4 sm:p-6 bg-black/95 backdrop-blur-md overflow-hidden relative">
+                  <h1 className="text-3xl sm:text-4xl font-black mb-4 text-[#FDE047] text-center stroke-black stroke-2 drop-shadow-[2px_2px_0_#000] shrink-0">
+                    DANH SÁCH CÂU SAI
+                  </h1>
+                  
+                  <div className="flex-1 overflow-y-auto bg-[#1a1a1a]/80 rounded-xl p-4 border-4 border-gray-600 custom-scrollbar relative z-10">
+                    {wrongAnswersList.map((item, idx) => (
+                      <div key={idx} className="mb-4 bg-gray-800/80 p-4 rounded-lg border-2 border-gray-600 shadow-md">
+                        <p className="font-bold text-lg sm:text-xl mb-3 text-yellow-300 leading-relaxed">
+                          {idx + 1}. {parseText(item.q, true)}
+                        </p>
+                        <div className="flex flex-col gap-2 bg-black/50 p-3 rounded">
+                          <p className="text-red-400 font-bold text-base sm:text-lg flex items-start gap-2">
+                            <span className="mt-1">❌</span>
+                            <span className="flex-1 leading-loose">{parseText(item.userAns, true)}</span>
+                          </p>
+                          <p className="text-green-400 font-bold text-base sm:text-lg flex items-start gap-2">
+                            <span className="mt-1">✅</span>
+                            <span className="flex-1 leading-loose">{parseText(item.correctAns, true)}</span>
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="shrink-0 mt-4 flex justify-center z-10">
+                    <button 
+                      onClick={startGame}
+                      className="px-8 py-4 bg-[#00a800] text-white font-black text-xl rounded-xl game-btn border-4 border-green-900 drop-shadow-none"
+                    >
+                      🔄 CHƠI LẠI TỪ ĐẦU
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* MẶT ĐẤT */}
               <div className="shrink-0 w-full h-[110px] bg-[#c84c0c] border-t-[10px] border-[#00a800] relative z-10">
                 <div className="w-full h-full opacity-30" style={{ 
                   backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)', 
@@ -595,7 +830,6 @@
           );
         }
 
-        // Render ứng dụng
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<MarioQuiz />);
     </script>
