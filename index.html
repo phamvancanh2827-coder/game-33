@@ -28,6 +28,11 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
+      /* Sửa lỗi tràn khung nhập liệu */
+      * {
+        box-sizing: border-box;
+      }
+
       .safe-game-wrapper {
         background-color: #1a1a1a; padding: 20px 0; border-radius: 16px; margin: 20px 0;
         display: flex; justify-content: center; align-items: center;
@@ -346,12 +351,13 @@
           
           const [wrongAnswersList, setWrongAnswersList] = useState([]); 
           const [studentName, setStudentName] = useState('');
+          const [studentClass, setStudentClass] = useState(''); // State mới cho Lớp
           const [isSubmitted, setIsSubmitted] = useState(false);
           const [isSending, setIsSending] = useState(false);
 
           const startGame = () => {
-            if (!studentName.trim()) {
-              alert("Em hãy nhập tên cho cô nhé!");
+            if (!studentName.trim() || !studentClass.trim()) {
+              alert("Em hãy nhập đầy đủ Tên và Lớp cho cô nhé!");
               return;
             }
 
@@ -402,7 +408,6 @@
 
               if (currentQ < questions.length - 1) {
                 const nextQ = currentQ + 1;
-                // Lên cấp mỗi 10 câu, chiến thắng ở câu 100
                 if (nextQ % 10 === 0 && nextQ < 100) {
                     setStoryLevel(nextQ / 10); playSound('levelup'); setGameState('story');
                 } else {
@@ -415,12 +420,15 @@
           };
 
           const submitScore = async (e, status, detailLabel, detailValue) => {
-            e.preventDefault(); 
+            if(e) e.preventDefault(); 
             if (!FORMSPREE_ID) { alert("Thiếu ID Formspree!"); return; }
             setIsSending(true);
             const formData = new FormData();
-            formData.append("Tên học sinh", studentName); formData.append("Tình trạng", status);
-            formData.append(detailLabel, detailValue); formData.append("Điểm số", score);
+            formData.append("Tên học sinh", studentName); 
+            formData.append("Lớp", studentClass);
+            formData.append("Tình trạng", status);
+            formData.append(detailLabel, detailValue); 
+            formData.append("Điểm số", score);
 
             try {
               const response = await fetch(FORMSPREE_URL, { method: 'POST', body: formData, headers: { 'Accept': 'application/json' } });
@@ -443,29 +451,41 @@
               {/* MÀN HÌNH BẮT ĐẦU */}
               {gameState === 'start' && (
                 <div className="flex-1 flex flex-col items-center justify-center z-10 text-white drop-shadow-[2px_2px_0_#000] p-4 text-center">
-                  <div className="mb-6 animate-bounce"><PrincessSVG width="100"/></div>
+                  <div className="mb-4 animate-bounce"><PrincessSVG width="100"/></div>
                   <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mb-4 text-center text-[#f8d070] tracking-wider stroke-black stroke-2">
                     SUPER MINNA QUIZ
                   </h1>
-                  <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">Ôn tập toàn diện Bài 33</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Ôn tập toàn diện Bài 33</h2>
                   
-                  {/* Khung nhập tên */}
-                  <div className="bg-[#f8d070] p-4 rounded-xl border-4 border-[#c84c0c] mb-6 w-full max-w-sm dialog-box">
-                    <p className="text-black font-bold mb-2 text-lg drop-shadow-none">Em hãy nhập tên cho cô nhé!</p>
-                    <input 
-                      type="text" 
-                      placeholder="Ví dụ: Nguyễn Văn A" 
-                      value={studentName}
-                      onChange={(e) => setStudentName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg border-4 border-black font-bold text-lg text-black drop-shadow-none focus:outline-none focus:border-blue-600"
-                    />
+                  {/* Khung nhập tên & Lớp (Đã fix lỗi tràn width bằng box-border) */}
+                  <div className="bg-[#f8d070] p-4 sm:p-6 rounded-xl border-[6px] border-[#c84c0c] mb-6 w-[90%] max-w-md dialog-box flex flex-col gap-4 box-border">
+                    <div className="w-full box-border">
+                      <p className="text-black font-bold mb-2 text-lg drop-shadow-none text-left">Tên của em:</p>
+                      <input 
+                        type="text" 
+                        placeholder="Ví dụ: Nguyễn Văn A" 
+                        value={studentName}
+                        onChange={(e) => setStudentName(e.target.value)}
+                        className="w-full box-border px-4 py-3 rounded-lg border-4 border-black font-bold text-lg text-black drop-shadow-none focus:outline-none focus:border-blue-600"
+                      />
+                    </div>
+                    <div className="w-full box-border">
+                      <p className="text-black font-bold mb-2 text-lg drop-shadow-none text-left">Lớp:</p>
+                      <input 
+                        type="text" 
+                        placeholder="Ví dụ: 10A1" 
+                        value={studentClass}
+                        onChange={(e) => setStudentClass(e.target.value)}
+                        className="w-full box-border px-4 py-3 rounded-lg border-4 border-black font-bold text-lg text-black drop-shadow-none focus:outline-none focus:border-blue-600"
+                      />
+                    </div>
                   </div>
 
                   <button 
                     onClick={startGame} 
-                    disabled={!studentName.trim()}
+                    disabled={!studentName.trim() || !studentClass.trim()}
                     className={`px-8 py-4 text-white font-black text-xl sm:text-2xl rounded-xl game-btn border-4 border-red-950 flex items-center justify-center gap-2
-                      ${studentName.trim() ? 'bg-[#E52521] hover:bg-red-600' : 'bg-gray-500 cursor-not-allowed opacity-80'}
+                      ${(studentName.trim() && studentClass.trim()) ? 'bg-[#E52521] hover:bg-red-600' : 'bg-gray-500 cursor-not-allowed opacity-80'}
                     `}
                   >
                     BẮT ĐẦU GIẢI CỨU
@@ -500,9 +520,9 @@
                 <>
                   <div className="shrink-0 flex justify-between items-center p-2 sm:p-4 font-bold text-white text-[11px] sm:text-base drop-shadow-[2px_2px_0_#000] bg-black/40 z-20 border-b-4 border-black/50 relative">
                     
-                    {/* Lời nhắn Cố lên */}
+                    {/* Lời nhắn Cố lên được cá nhân hóa theo Tên & Lớp */}
                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 font-black text-lg sm:text-xl text-[#FDE047] animate-pulse drop-shadow-[2px_2px_0_#000] whitespace-nowrap pointer-events-none">
-                      {studentName} がんばれ！
+                      [{studentClass}] {studentName} がんばれ！
                     </div>
 
                     <div className="flex flex-col items-center gap-1">
