@@ -425,8 +425,10 @@
 
         // =================================================================
         // ⚙️ CÀI ĐẶT GỬI ĐIỂM (FORMSPREE) - CHỈ CẦN THAY MÃ Ở ĐÂY
-        // Ví dụ: "https://formspree.io/f/xabcdefg"
-        const FORMSPREE_URL = "https://formspree.io/f/mjgjgqde"; 
+        // =================================================================
+        const FORMSPREE_ID = "mjgjgqde"; // VD: "xabcdefg"
+        
+        const FORMSPREE_URL = `https://formspree.io/f/${FORMSPREE_ID}`;
         // =================================================================
 
         // --- COMPONENT CHÍNH ---
@@ -554,8 +556,8 @@
           const submitScore = async (e, status, detailLabel, detailValue) => {
             e.preventDefault(); // Chặn hành động tải lại trang của Form
             
-            if (FORMSPREE_URL.includes("mjgjgqde")) {
-                alert("Cô giáo chưa cài đặt mã Formspree! Vui lòng thay đoạn mã MÃ_CỦA_BẠN_Ở_ĐÂY trong file code.");
+            if (!FORMSPREE_ID || FORMSPREE_ID === "MÃ_CỦA_BẠN_Ở_ĐÂY" || FORMSPREE_ID === "") {
+                alert("Cô giáo chưa cài đặt mã Formspree! Vui lòng thay đoạn mã MÃ_CỦA_BẠN_Ở_ĐÂY ở dòng số 457 trong file code.");
                 return;
             }
             
