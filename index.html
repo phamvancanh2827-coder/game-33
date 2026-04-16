@@ -441,6 +441,10 @@
           const [storyLevel, setStoryLevel] = useState(0);
           
           const [wrongAnswersList, setWrongAnswersList] = useState([]); // Lưu các câu trả lời sai
+          
+          // Thêm state cho tính năng Gửi Điểm
+          const [studentName, setStudentName] = useState('');
+          const [isSubmitted, setIsSubmitted] = useState(false);
 
           const startGame = () => {
             playSound('start');
@@ -468,6 +472,8 @@
             setDisabledOptions([]);
             setStoryLevel(0);
             setWrongAnswersList([]); // Reset danh sách sai
+            setStudentName(''); // Reset tên
+            setIsSubmitted(false); // Reset trạng thái gửi
             setGameState('playing');
             setFeedback(null);
             setSelectedAns(null);
@@ -722,6 +728,21 @@
                     <p className="text-lg sm:text-xl font-bold mb-2">Dừng chân ở câu: {currentQ + 1} / {questions.length}</p>
                     <p className="text-3xl sm:text-4xl font-black mt-4 text-[#E52521]">ĐIỂM: {score}</p>
                   </div>
+
+                  {/* FORM NỘP BÀI (GAME OVER) */}
+                  {!isSubmitted ? (
+                    <form action="https://formspree.io/f/mjgjgqde" method="POST" target="_blank" onSubmit={() => setIsSubmitted(true)} className="flex flex-col items-center gap-3 w-full max-w-md mb-8">
+                      <input type="text" name="Tên học sinh" required placeholder="Nhập tên của em..." className="px-4 py-3 rounded-lg border-4 border-black w-full font-bold text-lg text-black font-sans" onChange={(e) => setStudentName(e.target.value)} value={studentName} />
+                      <input type="hidden" name="Tình trạng" value="Thất bại (Game Over)" />
+                      <input type="hidden" name="Câu dừng lại" value={`${currentQ + 1} / ${questions.length}`} />
+                      <input type="hidden" name="Điểm số" value={score} />
+                      <button type="submit" className="px-6 py-3 bg-blue-500 text-white font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-blue-900 w-full drop-shadow-none">
+                        📤 GỬI ĐIỂM CHO CÔ
+                      </button>
+                    </form>
+                  ) : (
+                    <p className="font-pixel text-green-400 text-sm sm:text-base mb-8">✔️ ĐÃ GỬI KẾT QUẢ!</p>
+                  )}
                   
                   <div className="flex flex-col sm:flex-row gap-4">
                     {wrongAnswersList.length > 0 && (
@@ -759,6 +780,21 @@
                     <p className="text-4xl sm:text-5xl font-black mb-4 text-[#E52521]">ĐIỂM: {score}</p>
                     <p className="text-lg sm:text-xl font-bold mb-2 text-[#00a800]">Vẫn còn {lives} mạng!</p>
                   </div>
+
+                  {/* FORM NỘP BÀI (CHIẾN THẮNG) */}
+                  {!isSubmitted ? (
+                    <form action="https://formspree.io/f/mjgjgqde" method="POST" target="_blank" onSubmit={() => setIsSubmitted(true)} className="flex flex-col items-center gap-3 w-full max-w-md mb-8">
+                      <input type="text" name="Tên học sinh" required placeholder="Nhập tên của em..." className="px-4 py-3 rounded-lg border-4 border-black w-full font-bold text-lg text-black font-sans" onChange={(e) => setStudentName(e.target.value)} value={studentName} />
+                      <input type="hidden" name="Tình trạng" value="Chiến thắng (Cứu được Công chúa)" />
+                      <input type="hidden" name="Mạng còn lại" value={lives} />
+                      <input type="hidden" name="Điểm số" value={score} />
+                      <button type="submit" className="px-6 py-3 bg-blue-500 text-white font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-blue-900 w-full drop-shadow-none">
+                        📤 GỬI ĐIỂM CHO CÔ
+                      </button>
+                    </form>
+                  ) : (
+                    <p className="font-pixel text-green-400 text-sm sm:text-base mb-8">✔️ ĐÃ GỬI KẾT QUẢ!</p>
+                  )}
                   
                   <div className="flex flex-col sm:flex-row gap-4">
                     {wrongAnswersList.length > 0 && (
