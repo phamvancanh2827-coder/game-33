@@ -399,7 +399,6 @@
         };
 
         // --- BỘ PHÂN TÍCH FURIGANA ---
-        // isAnswer = false (câu hỏi: chữ ĐEN), isAnswer = true (đáp án: chữ TRẮNG có viền đen)
         const parseText = (text, isAnswer = false) => {
           if (typeof text !== 'string') return text;
           const parts = text.split(/(\{.*?\})/g);
@@ -424,6 +423,12 @@
           });
         };
 
+        // =================================================================
+        // ⚙️ CÀI ĐẶT GỬI ĐIỂM (FORMSPREE) - CHỈ CẦN THAY MÃ Ở ĐÂY
+        // Ví dụ: "https://formspree.io/f/xabcdefg"
+        const FORMSPREE_URL = "https://formspree.io/f/MÃ_CỦA_BẠN_Ở_ĐÂY"; 
+        // =================================================================
+
         // --- COMPONENT CHÍNH ---
         function MarioQuiz() {
           const [gameState, setGameState] = useState('start'); 
@@ -440,29 +445,25 @@
           const [feedback, setFeedback] = useState(null); 
           const [storyLevel, setStoryLevel] = useState(0);
           
-          const [wrongAnswersList, setWrongAnswersList] = useState([]); // Lưu các câu trả lời sai
+          const [wrongAnswersList, setWrongAnswersList] = useState([]); 
           
-          // Thêm state cho tính năng Gửi Điểm
           const [studentName, setStudentName] = useState('');
           const [isSubmitted, setIsSubmitted] = useState(false);
+          const [isSending, setIsSending] = useState(false); // Ngăn bấm gửi nhiều lần
 
           const startGame = () => {
             playSound('start');
             
-            // Xáo trộn Câu Hỏi VÀ Đáp Án Tự Động (Giải quyết triệt để lỗi phân bổ tập trung vào A và B)
             const shuffledQs = quizData.map(q => {
-              // B1: Gắn cờ (flag) cho đáp án đúng ban đầu
               const optsWithFlag = q.options.map((opt, idx) => ({ text: opt, isCorrect: idx === q.a }));
-              // B2: Xáo trộn mảng 4 đáp án này
               const shuffledOpts = optsWithFlag.sort(() => 0.5 - Math.random());
-              // B3: Cập nhật lại chỉ số (index) của đáp án đúng sau khi đã xáo trộn
               const newCorrectIdx = shuffledOpts.findIndex(o => o.isCorrect);
               return {
                 q: q.q,
                 options: shuffledOpts.map(o => o.text),
                 a: newCorrectIdx
               };
-            }).sort(() => 0.5 - Math.random()); // Cuối cùng xáo trộn thứ tự các câu hỏi
+            }).sort(() => 0.5 - Math.random()); 
 
             setQuestions(shuffledQs);
             setCurrentQ(0);
@@ -471,9 +472,10 @@
             setHelps(5);
             setDisabledOptions([]);
             setStoryLevel(0);
-            setWrongAnswersList([]); // Reset danh sách sai
-            setStudentName(''); // Reset tên
-            setIsSubmitted(false); // Reset trạng thái gửi
+            setWrongAnswersList([]); 
+            setStudentName(''); 
+            setIsSubmitted(false); 
+            setIsSending(false);
             setGameState('playing');
             setFeedback(null);
             setSelectedAns(null);
@@ -508,7 +510,6 @@
               playSound('wrong');
               setLives(prev => prev - 1);
               
-              // Lưu lại câu trả lời sai
               setWrongAnswersList(prev => [...prev, {
                 q: questions[currentQ].q,
                 userAns: questions[currentQ].options[index],
@@ -530,7 +531,6 @@
 
               if (currentQ < questions.length - 1) {
                 const nextQ = currentQ + 1;
-                // Chặng mới cứ mỗi 10 câu. Cứu công chúa ở câu thứ 70.
                 if (nextQ % 10 === 0 && nextQ < 70) {
                     setStoryLevel(nextQ / 10);
                     playSound('levelup');
@@ -548,6 +548,44 @@
           const continueGame = () => {
               setCurrentQ(storyLevel * 10);
               setGameState('playing');
+          };
+
+          // --- XỬ LÝ GỬI ĐIỂM BẰNG AJAX (NGẦM) ---
+          const submitScore = async (e, status, detailLabel, detailValue) => {
+            e.preventDefault(); // Chặn hành động tải lại trang của Form
+            
+            if (FORMSPREE_URL.includes("MÃ_CỦA_BẠN")) {
+                alert("Cô giáo chưa cài đặt mã Formspree! Vui lòng thay đoạn mã MÃ_CỦA_BẠN_Ở_ĐÂY trong file code.");
+                return;
+            }
+            
+            setIsSending(true);
+
+            const formData = new FormData();
+            formData.append("Tên học sinh", studentName);
+            formData.append("Tình trạng", status);
+            formData.append(detailLabel, detailValue);
+            formData.append("Điểm số", score);
+
+            try {
+              const response = await fetch(FORMSPREE_URL, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'Accept': 'application/json'
+                }
+              });
+
+              if (response.ok) {
+                setIsSubmitted(true);
+              } else {
+                alert("Rất tiếc! Hệ thống gửi điểm đang bị lỗi. Hãy thử lại nhé.");
+                setIsSending(false);
+              }
+            } catch (error) {
+              alert("Lỗi kết nối mạng, vui lòng kiểm tra Wifi/3G và thử lại.");
+              setIsSending(false);
+            }
           };
 
           const currentStageNumber = Math.floor(currentQ / 10) + 1;
@@ -729,19 +767,18 @@
                     <p className="text-3xl sm:text-4xl font-black mt-4 text-[#E52521]">ĐIỂM: {score}</p>
                   </div>
 
-                  {/* FORM NỘP BÀI (GAME OVER) */}
+                  {/* FORM NỘP BÀI (GAME OVER) BẰNG AJAX */}
                   {!isSubmitted ? (
-                    <form action="https://formspree.io/f/mjgjgqde" method="POST" target="_blank" onSubmit={() => setIsSubmitted(true)} className="flex flex-col items-center gap-3 w-full max-w-md mb-8">
-                      <input type="text" name="Tên học sinh" required placeholder="Nhập tên của em..." className="px-4 py-3 rounded-lg border-4 border-black w-full font-bold text-lg text-black font-sans" onChange={(e) => setStudentName(e.target.value)} value={studentName} />
-                      <input type="hidden" name="Tình trạng" value="Thất bại (Game Over)" />
-                      <input type="hidden" name="Câu dừng lại" value={`${currentQ + 1} / ${questions.length}`} />
-                      <input type="hidden" name="Điểm số" value={score} />
-                      <button type="submit" className="px-6 py-3 bg-blue-500 text-white font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-blue-900 w-full drop-shadow-none">
-                        📤 GỬI ĐIỂM CHO CÔ
+                    <form onSubmit={(e) => submitScore(e, "Thất bại (Game Over)", "Câu dừng lại", `${currentQ + 1} / ${questions.length}`)} className="flex flex-col items-center gap-3 w-full max-w-md mb-8">
+                      <input type="text" required placeholder="Nhập tên của em..." className="px-4 py-3 rounded-lg border-4 border-black w-full font-bold text-lg text-black font-sans focus:outline-none focus:border-blue-500" onChange={(e) => setStudentName(e.target.value)} value={studentName} />
+                      <button type="submit" disabled={isSending} className="px-6 py-3 bg-blue-500 text-white font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-blue-900 w-full drop-shadow-none flex justify-center items-center">
+                        {isSending ? "ĐANG GỬI..." : "📤 GỬI ĐIỂM CHO CÔ"}
                       </button>
                     </form>
                   ) : (
-                    <p className="font-pixel text-green-400 text-sm sm:text-base mb-8">✔️ ĐÃ GỬI KẾT QUẢ!</p>
+                    <div className="bg-green-500 border-4 border-green-800 text-white font-bold text-lg px-6 py-3 rounded-lg mb-8 drop-shadow-none">
+                      ✔️ ĐÃ GỬI KẾT QUẢ THÀNH CÔNG!
+                    </div>
                   )}
                   
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -781,19 +818,18 @@
                     <p className="text-lg sm:text-xl font-bold mb-2 text-[#00a800]">Vẫn còn {lives} mạng!</p>
                   </div>
 
-                  {/* FORM NỘP BÀI (CHIẾN THẮNG) */}
+                  {/* FORM NỘP BÀI (CHIẾN THẮNG) BẰNG AJAX */}
                   {!isSubmitted ? (
-                    <form action="https://formspree.io/f/mjgjgqde" method="POST" target="_blank" onSubmit={() => setIsSubmitted(true)} className="flex flex-col items-center gap-3 w-full max-w-md mb-8">
-                      <input type="text" name="Tên học sinh" required placeholder="Nhập tên của em..." className="px-4 py-3 rounded-lg border-4 border-black w-full font-bold text-lg text-black font-sans" onChange={(e) => setStudentName(e.target.value)} value={studentName} />
-                      <input type="hidden" name="Tình trạng" value="Chiến thắng (Cứu được Công chúa)" />
-                      <input type="hidden" name="Mạng còn lại" value={lives} />
-                      <input type="hidden" name="Điểm số" value={score} />
-                      <button type="submit" className="px-6 py-3 bg-blue-500 text-white font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-blue-900 w-full drop-shadow-none">
-                        📤 GỬI ĐIỂM CHO CÔ
+                    <form onSubmit={(e) => submitScore(e, "Chiến thắng (Cứu được Công chúa)", "Mạng còn lại", lives)} className="flex flex-col items-center gap-3 w-full max-w-md mb-8">
+                      <input type="text" required placeholder="Nhập tên của em..." className="px-4 py-3 rounded-lg border-4 border-black w-full font-bold text-lg text-black font-sans focus:outline-none focus:border-blue-500" onChange={(e) => setStudentName(e.target.value)} value={studentName} />
+                      <button type="submit" disabled={isSending} className="px-6 py-3 bg-blue-500 text-white font-black text-lg sm:text-xl rounded-xl game-btn border-4 border-blue-900 w-full drop-shadow-none flex justify-center items-center">
+                        {isSending ? "ĐANG GỬI..." : "📤 GỬI ĐIỂM CHO CÔ"}
                       </button>
                     </form>
                   ) : (
-                    <p className="font-pixel text-green-400 text-sm sm:text-base mb-8">✔️ ĐÃ GỬI KẾT QUẢ!</p>
+                    <div className="bg-green-500 border-4 border-green-800 text-white font-bold text-lg px-6 py-3 rounded-lg mb-8 drop-shadow-none">
+                      ✔️ ĐÃ GỬI KẾT QUẢ THÀNH CÔNG!
+                    </div>
                   )}
                   
                   <div className="flex flex-col sm:flex-row gap-4">
