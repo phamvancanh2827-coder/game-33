@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Minna Quiz - Bài 33</title>
+    <title>Super Minna Quiz - Giải Cứu Công Chúa</title>
     
     <!-- Tích hợp Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         corePlugins: {
-          preflight: false, // Tắt reset CSS để không làm hỏng giao diện web WordPress
+          preflight: false,
         },
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['system-ui', '-apple-system', 'sans-serif'],
+            },
             animation: {
               'spin-slow': 'spin 3s linear infinite',
             }
@@ -28,7 +31,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
-      /* Vùng chứa game an toàn cho WordPress */
       .safe-game-wrapper {
         background-color: #1a1a1a;
         padding: 20px 0;
@@ -38,9 +40,38 @@
         justify-content: center;
         align-items: center;
       }
-      /* Căn chỉnh mặc định cho Furigana */
       ruby {
         ruby-align: center;
+      }
+
+      /* Animation riêng cho hiệu ứng nhảy qua chướng ngại vật */
+      @keyframes mario-jump {
+        0% { transform: translateY(0) scale(1); }
+        30% { transform: translateY(-130px) scale(1.05); }
+        60% { transform: translateY(-130px) scale(1.05); }
+        100% { transform: translateY(0) scale(1); }
+      }
+      @keyframes obstacle-slide {
+        0% { transform: translateX(200px); opacity: 1; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateX(-50px); opacity: 0; }
+      }
+      .animate-mario-jump {
+        animation: mario-jump 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      .animate-obstacle-slide {
+        animation: obstacle-slide 1.2s linear forwards;
+      }
+
+      /* Thiết kế Nút bấm nổi */
+      .game-btn {
+        box-shadow: 0px 6px 0px rgba(0,0,0,0.3);
+        transition: all 0.1s;
+      }
+      .game-btn:active {
+        box-shadow: 0px 0px 0px rgba(0,0,0,0.3);
+        transform: translateY(6px);
       }
     </style>
 </head>
@@ -54,7 +85,6 @@
 
         // --- BỘ CÂU HỎI (60 CÂU - ĐÃ BỔ SUNG FULL FURIGANA) ---
         const quizData = [
-          // TỪ VỰNG
           { q: 'Từ vựng: "Chạy trốn" tiếng Nhật là gì?', options: ["{逃|に}げます", "{騒|さわ}ぎます", "{諦|あきら}めます", "{投|な}げます"], a: 0 },
           { q: 'Từ vựng: "Làm ồn" tiếng Nhật là gì?', options: ["{投|な}げます", "{騒|さわ}ぎます", "{守|まも}ります", "{伝|つた}えます"], a: 1 },
           { q: 'Từ vựng: "Từ bỏ" tiếng Nhật là gì?', options: ["{注意|ちゅうい}します", "{外|はず}します", "{戻|もど}ります", "{諦|あきら}めます"], a: 3 },
@@ -89,7 +119,6 @@
           { q: 'Từ vựng: "Chỗ ngồi" tiếng Nhật là gì?', options: ["おなじ", "ボール", "{席|せき}", "マーク"], a: 2 },
           { q: 'Từ vựng: "Quả bóng" tiếng Nhật là gì?', options: ["マーク", "{席|せき}", "ボール", "{規則|きそく}"], a: 2 },
           
-          // NGỮ PHÁP - THỂ MỆNH LỆNH
           { q: 'Chuyển sang Thể mệnh lệnh: "{書|か}きます" (Viết)', options: ["{書|か}け", "{書|か}きろ", "{書|か}く", "{書|か}こ"], a: 0 },
           { q: 'Chuyển sang Thể mệnh lệnh: "{泳|およ}ぎます" (Bơi)', options: ["{泳|およ}がれ", "{泳|およ}ぐな", "{泳|およ}げ", "{泳|およ}ぎろ"], a: 2 },
           { q: 'Chuyển sang Thể mệnh lệnh: "{飲|の}みます" (Uống)', options: ["{飲|の}め", "{飲|の}むな", "{飲|の}まれ", "{飲|の}みろ"], a: 0 },
@@ -107,7 +136,6 @@
           { q: 'Chuyển sang Thể mệnh lệnh: "{持|も}って{来|き}ます" (Mang đến)', options: ["{持|も}ってくれ", "{持|も}ってきろ", "{持|も}って{来|こ}い", "{持|も}って{来|く}るな"], a: 2 },
           { q: 'Chuyển sang Thể mệnh lệnh: "{勉強|べんきょう}します" (Học)', options: ["{勉強|べんきょう}すれ", "{勉強|べんきょう}せよ", "{勉強|べんきょう}しろ", "{勉強|べんきょう}するな"], a: 2 },
           
-          // NGỮ PHÁP - THỂ CẤM CHỈ & ỨNG DỤNG
           { q: 'Chuyển sang Thể cấm chỉ: "{入|はい}ります" (Vào)', options: ["{入|はい}るな", "{入|はい}らない", "{入|はい}らな", "{入|はい}れない"], a: 0 },
           { q: 'Chuyển sang Thể cấm chỉ: "{触|さわ}ります" (Chạm)', options: ["{触|さわ}らない", "{触|さわ}らな", "{触|さわ}るな", "{触|さわ}れな"], a: 2 },
           { q: 'Chuyển sang Thể cấm chỉ: "{吸|す}います" (Hút)', options: ["{吸|す}わない", "{吸|す}うな", "{吸|す}わな", "{吸|す}えな"], a: 1 },
@@ -124,7 +152,53 @@
           { q: 'Nói cấm đoán nhẹ nhàng hơn ở xưởng: "{少|すこ}し {手伝|てつだ}って"', options: ["{手伝|てつだ}いなさい", "{手伝|てつだ}ってくれ", "{手伝|てつだ}うな", "{手伝|てつだ}え"], a: 1 }
         ];
 
-        // --- HÌNH ẢNH MARIO BẰNG SVG ---
+        // --- CẤU TRÚC CỐT TRUYỆN (STORY MODULE) ---
+        const getStoryContent = (level) => {
+            switch(level) {
+                case 1: return { 
+                    title: "CHẶNG 1", 
+                    desc: "Bạn đã an toàn đánh bại Quái thú và vượt qua Rừng Từ Vựng 🍄. Giữ vững phong độ nhé!", 
+                    icon: "🍄", bg: "bg-green-600" 
+                };
+                case 2: return { 
+                    title: "CHẶNG 2", 
+                    desc: "Cái nóng của Sa mạc Cấm Chỉ 🌵 không cản được bước chân bạn. Đi tiếp thôi!", 
+                    icon: "🌵", bg: "bg-yellow-600" 
+                };
+                case 3: return { 
+                    title: "CHẶNG 3", 
+                    desc: "Bạn vừa lướt qua Vịnh Nước Xoáy 🌊 một cách ngoạn mục! Chúng ta đã đi được nửa đường rồi!", 
+                    icon: "🐢", bg: "bg-blue-600" 
+                };
+                case 4: return { 
+                    title: "CHẶNG 4", 
+                    desc: "Tuyệt vời! Bạn đã leo qua Đỉnh Núi Mệnh Lệnh ⛰️. Lâu đài của kẻ thù đã ở rất gần!", 
+                    icon: "🪨", bg: "bg-gray-600" 
+                };
+                case 5: return { 
+                    title: "CHẶNG 5", 
+                    desc: "Cổng Lâu đài Hắc Ám 🏰 đã bị phá vỡ! Trang bị vũ khí và sẵn sàng đối đầu với Trùm Cuối nào!", 
+                    icon: "🔥", bg: "bg-purple-800" 
+                };
+                default: return { title: "", desc: "", icon: "", bg: "bg-[#5c94fc]" };
+            }
+        }
+
+        // --- HÌNH ẢNH SVG THEO PHONG CÁCH PIXEL ---
+        const PixelArt = ({ pixels, colorMap, width = "60" }) => {
+           const h = pixels.length;
+           const w = pixels[0].length;
+           return (
+             <svg width={width} viewBox={`0 0 ${w} ${h}`} className="drop-shadow-[4px_4px_0_rgba(0,0,0,0.5)]" style={{imageRendering: 'pixelated'}}>
+               {pixels.map((row, y) =>
+                 row.split('').map((colorCode, x) => (
+                   colorCode !== ' ' && <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={colorMap[colorCode]} />
+                 ))
+               )}
+             </svg>
+           )
+        }
+
         const MarioSVG = ({ isSad }) => {
           const pixels = [
             "   RRRRR    ",
@@ -144,30 +218,52 @@
             " LLL  LLL   ",
             "LLLL  LLLL  "
           ];
-
           const colorMap = isSad 
             ? { 'R': '#777', 'Y': '#ccc', 'K': '#333', 'B': '#555', 'L': '#111' } 
             : { 'R': '#E52521', 'Y': '#FFCC99', 'K': '#333333', 'B': '#00439C', 'L': '#5C3A21' }; 
-
-          return (
-            <svg width="120" height="160" viewBox="0 0 12 16" className="drop-shadow-lg">
-              {pixels.map((row, y) =>
-                row.split('').map((colorCode, x) => (
-                  colorCode !== ' ' && <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={colorMap[colorCode]} />
-                ))
-              )}
-            </svg>
-          );
+          return <PixelArt pixels={pixels} colorMap={colorMap} width="80" />;
         };
 
+        // Các chướng ngại vật thay đổi theo cấp độ
+        const MushroomSVG = () => <PixelArt width="50" colorMap={{ 'R': '#E52521', 'W': '#FFFFFF', 'F': '#FFCC99', 'K': '#000000' }} pixels={[
+            "   RRRR   ", "  RRRRRR  ", " RRRWWRRR ", " RRWWWWWW ", " RRRRRRRR ", "   FFFF   ", "  FFKKFF  ", "   FFFF   "
+        ]} />;
+        const CactusSVG = () => <PixelArt width="40" colorMap={{ 'C': '#22c55e', 'D': '#166534' }} pixels={[
+            "   CC   ", " C CC   ", " C CC   ", " C CCCC ", " C CC C ", "   CC C ", "   CC   ", "   CC   "
+        ]} />;
+        const ShellSVG = () => <PixelArt width="50" colorMap={{ 'G': '#16a34a', 'K': '#000000', 'W': '#ffffff' }} pixels={[
+            "   GGGG   ", " GGGGGGGG ", " GKKGGKKG ", " GGGGGGGG ", "WWWWWWWWWW", " W W  W W "
+        ]} />;
+        const RockSVG = () => <PixelArt width="50" colorMap={{ 'A': '#64748b', 'B': '#475569' }} pixels={[
+            "   AAAA   ", "  ABBAAA  ", " AABBAAAA ", " AAAABBAA ", "AAAAAAAAAA"
+        ]} />;
+        const FireballSVG = () => <PixelArt width="50" colorMap={{ 'R': '#ef4444', 'Y': '#facc15' }} pixels={[
+            "   RR   ", "  RYYR  ", " RYYYYR ", " RYYYYR ", "  RYYR  ", "   RR   "
+        ]} />;
+        const StarSVG = () => <PixelArt width="50" colorMap={{ 'Y': '#fef08a', 'O': '#eab308', 'K': '#000000' }} pixels={[
+            "    YY    ", "   YYYY   ", "YYYYYYYYYY", " YYYKKYYY ", "  YYYYYY  ", " YYY  YYY ", " YY    YY "
+        ]} />;
+
+        const getObstacleSVG = (level) => {
+          switch(level) {
+             case 1: return <MushroomSVG />;
+             case 2: return <CactusSVG />;
+             case 3: return <ShellSVG />;
+             case 4: return <RockSVG />;
+             case 5: return <FireballSVG />;
+             case 6: return <StarSVG />;
+             default: return <MushroomSVG />;
+          }
+        }
+
         const CoinSVG = () => (
-          <svg viewBox="0 0 24 24" className="w-8 h-8 inline-block animate-spin-slow drop-shadow-md">
+          <svg viewBox="0 0 24 24" className="w-8 h-8 inline-block animate-spin-slow drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
             <circle cx="12" cy="12" r="10" fill="#FDE047" stroke="#B45309" strokeWidth="2" />
             <rect x="10" y="6" width="4" height="12" fill="#B45309" rx="1" />
           </svg>
         );
 
-        // --- ÂM THANH (AUDIO CONTEXT 8-BIT) ---
+        // --- ÂM THANH ---
         const playSound = (type) => {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           if (!AudioContext) return;
@@ -183,25 +279,23 @@
             osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.1);
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
           } else if (type === 'wrong') {
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(150, ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
             gain.gain.setValueAtTime(0.2, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.3);
-          } else if (type === 'start') {
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
+          } else if (type === 'start' || type === 'levelup') {
             osc.type = 'square';
-            osc.frequency.setValueAtTime(440, ctx.currentTime);
-            osc.frequency.setValueAtTime(554, ctx.currentTime + 0.1);
-            osc.frequency.setValueAtTime(659, ctx.currentTime + 0.2);
+            osc.frequency.setValueAtTime(261.63, ctx.currentTime); 
+            osc.frequency.setValueAtTime(329.63, ctx.currentTime + 0.1); 
+            osc.frequency.setValueAtTime(392.00, ctx.currentTime + 0.2); 
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime + 0.3); 
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.4);
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
           } else if (type === 'win') {
             osc.type = 'square';
             osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
@@ -210,24 +304,27 @@
             osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.45); 
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
             gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.8);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.8);
           }
         };
 
         // --- BỘ PHÂN TÍCH FURIGANA ---
-        const parseText = (text) => {
+        // isAnswer = false (câu hỏi: chữ ĐEN), isAnswer = true (đáp án: chữ TRẮNG có viền)
+        const parseText = (text, isAnswer = false) => {
           if (typeof text !== 'string') return text;
           const parts = text.split(/(\{.*?\})/g);
           return parts.map((part, index) => {
             if (part.startsWith('{') && part.endsWith('}')) {
               const content = part.slice(1, -1);
               const [kanji, furigana] = content.split('|');
+              
+              const colorClass = isAnswer ? "text-white" : "text-black";
+              const shadowStyle = isAnswer ? { textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' } : {};
+
               return (
                 <ruby key={index} className="mx-[2px] align-baseline">
                   {kanji}
-                  {/* Đã chỉnh màu Furigana thành màu đen (text-black) và tăng độ đậm */}
-                  <rt className="text-[0.75em] text-black font-extrabold tracking-tighter">
+                  <rt className={`text-[0.75em] ${colorClass} font-extrabold tracking-tighter`} style={shadowStyle}>
                     {furigana}
                   </rt>
                 </ruby>
@@ -246,6 +343,7 @@
           const [selectedAns, setSelectedAns] = useState(null);
           const [isAnimating, setIsAnimating] = useState(false);
           const [feedback, setFeedback] = useState(null); 
+          const [storyLevel, setStoryLevel] = useState(0);
 
           const startGame = () => {
             playSound('start');
@@ -253,6 +351,7 @@
             setQuestions(shuffled);
             setCurrentQ(0);
             setScore(0);
+            setStoryLevel(0);
             setGameState('playing');
             setFeedback(null);
             setSelectedAns(null);
@@ -280,149 +379,203 @@
               setSelectedAns(null);
               
               if (currentQ < questions.length - 1) {
-                setCurrentQ(currentQ + 1);
+                const nextQ = currentQ + 1;
+                // Mỗi 10 câu thì qua màn
+                if (nextQ % 10 === 0 && nextQ < 60) {
+                    setStoryLevel(nextQ / 10);
+                    playSound('levelup');
+                    setGameState('story');
+                } else {
+                    setCurrentQ(nextQ);
+                }
               } else {
                 playSound('win');
                 setGameState('end');
               }
-            }, 1500); 
+            }, 1800); 
           };
 
+          const continueGame = () => {
+              setCurrentQ(storyLevel * 10);
+              setGameState('playing');
+          };
+
+          // Xác định Cấp độ hiện tại để hiện đúng Chướng ngại vật
+          const currentStageNumber = Math.floor(currentQ / 10) + 1;
+
           return (
-            <div className="w-full max-w-4xl mx-auto h-[600px] sm:h-[650px] flex flex-col relative overflow-hidden bg-[#5c94fc] rounded-xl sm:rounded-2xl shadow-2xl font-sans select-none border-4 border-gray-800">
+            <div className="w-full max-w-4xl mx-auto h-[650px] sm:h-[700px] flex flex-col relative overflow-hidden bg-[#5c94fc] rounded-xl sm:rounded-2xl shadow-2xl font-sans select-none border-[6px] border-gray-800">
               
               {/* NỀN ĐÁM MÂY */}
               <div className="absolute inset-0 pointer-events-none z-0">
-                  <div className="absolute top-10 left-10 w-24 h-8 bg-white/80 rounded-full blur-[2px]"></div>
-                  <div className="absolute top-24 right-20 w-32 h-10 bg-white/80 rounded-full blur-[2px]"></div>
-                  <div className="absolute top-16 left-1/2 w-20 h-6 bg-white/80 rounded-full blur-[2px]"></div>
+                  <div className="absolute top-10 left-10 w-24 h-8 bg-white/80 rounded-full blur-[1px]"></div>
+                  <div className="absolute top-24 right-20 w-32 h-10 bg-white/80 rounded-full blur-[1px]"></div>
+                  <div className="absolute top-16 left-1/2 w-20 h-6 bg-white/80 rounded-full blur-[1px]"></div>
               </div>
 
               {/* MÀN HÌNH BẮT ĐẦU */}
               {gameState === 'start' && (
-                <div className="flex-1 flex flex-col items-center justify-center z-10 text-white drop-shadow-[2px_2px_0_#000] p-4">
-                  <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 text-center tracking-widest text-[#f8d070] stroke-black stroke-2">
+                <div className="flex-1 flex flex-col items-center justify-center z-10 text-white drop-shadow-[2px_2px_0_#000] p-4 text-center">
+                  <div className="text-6xl mb-2 animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">👸🏻</div>
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 text-center text-[#f8d070] tracking-wider stroke-black stroke-2">
                     SUPER MINNA QUIZ
                   </h1>
-                  <h2 className="text-xl sm:text-2xl font-bold mb-10 text-white text-center">Ôn tập Từ vựng & Ngữ pháp Bài 33</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Công chúa Minna đã bị bắt cóc!</h2>
+                  <p className="text-base sm:text-lg max-w-md mx-auto mb-8 text-gray-200 font-medium leading-relaxed">
+                    Hãy vượt qua 6 chặng đường gian nan của Bài 33 để giải cứu Công chúa nhé!
+                  </p>
                   <MarioSVG isSad={false} />
                   <button 
                     onClick={startGame}
-                    className="mt-8 px-8 py-5 bg-[#E52521] text-white font-bold text-2xl sm:text-3xl rounded-xl border-b-8 border-red-900 hover:bg-red-500 hover:-translate-y-1 hover:border-b-[10px] active:border-b-4 active:translate-y-2 transition-all"
+                    className="mt-8 px-8 py-5 bg-[#E52521] text-white font-black text-xl sm:text-3xl rounded-xl game-btn border-4 border-red-950"
                   >
-                    ▶ BẮT ĐẦU
+                    ▶ BẮT ĐẦU GIẢI CỨU
                   </button>
                 </div>
               )}
+
+              {/* MÀN HÌNH CỐT TRUYỆN (LÊN CẤP) */}
+              {gameState === 'story' && (() => {
+                  const story = getStoryContent(storyLevel);
+                  return (
+                    <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center text-white drop-shadow-[2px_2px_0_#000] p-4 ${story.bg}`}>
+                        <div className="text-8xl sm:text-9xl mb-6 animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
+                            {story.icon}
+                        </div>
+                        <h1 className="text-4xl sm:text-5xl font-black mb-6 text-center text-[#FDE047] stroke-black stroke-2">
+                            {story.title}
+                        </h1>
+                        <p className="text-xl sm:text-2xl font-bold mb-12 text-center max-w-lg leading-relaxed">
+                            {story.desc}
+                        </p>
+                        <button 
+                            onClick={continueGame}
+                            className="px-8 py-4 bg-white text-black font-black text-lg sm:text-2xl rounded-xl game-btn border-4 border-gray-400 drop-shadow-none"
+                        >
+                            Tiếp tục hành trình ▶
+                        </button>
+                    </div>
+                  );
+              })()}
 
               {/* MÀN HÌNH CHƠI GAME */}
               {gameState === 'playing' && (
                 <>
                   {/* Header Stats */}
-                  <div className="shrink-0 flex justify-between p-3 sm:p-4 font-extrabold text-white text-sm sm:text-xl drop-shadow-[2px_2px_0_#000] z-20">
+                  <div className="shrink-0 flex justify-between p-3 sm:p-5 font-bold text-white text-sm sm:text-xl drop-shadow-[2px_2px_0_#000] bg-black/20 z-20">
                     <div className="flex flex-col items-center">
                       <span>ĐIỂM</span>
-                      <span>{score.toString().padStart(6, '0')}</span>
+                      <span className="text-[#FDE047]">{score.toString().padStart(6, '0')}</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span>CÂU HỎI</span>
-                      <span>{currentQ + 1} / {questions.length}</span>
+                      <span>{currentQ + 1}/{questions.length}</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span>TIỀN XU</span>
-                      <span className="flex items-center gap-1"><CoinSVG /> x{score / 10}</span>
+                      <span className="flex items-center gap-1 text-[#FDE047]"><CoinSVG /> x{score / 10}</span>
                     </div>
                   </div>
 
                   {/* Thanh Tiến Độ */}
-                  <div className="shrink-0 w-[90%] mx-auto bg-black/50 h-2 sm:h-3 rounded-full overflow-hidden mt-1 z-20">
+                  <div className="shrink-0 w-full bg-black/50 h-2 sm:h-3 overflow-hidden z-20">
                     <div 
                       className="bg-[#00a800] h-full transition-all duration-300"
                       style={{ width: `${((currentQ) / questions.length) * 100}%` }}
                     ></div>
                   </div>
 
-                  {/* Phần Nội dung Căn giữa */}
-                  <div className="flex-1 flex flex-col justify-center w-[90%] sm:w-[85%] mx-auto z-20 py-2">
+                  {/* Phần Câu Hỏi & Đáp Án */}
+                  <div className="flex-1 flex flex-col justify-center w-[95%] sm:w-[90%] mx-auto z-20 py-2">
                     
-                    {/* BẢNG CÂU HỎI - Cỡ chữ to */}
+                    {/* BẢNG CÂU HỎI (Furigana ĐEN) */}
                     <div className="relative bg-[#f8d070] border-4 border-[#c84c0c] p-4 sm:p-6 rounded-xl shadow-[inset_0_-6px_0_rgba(0,0,0,0.2)] text-center shrink-0">
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#E52521] text-white px-4 py-1 rounded-full font-bold border-2 border-black drop-shadow-md text-sm sm:text-base">
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#E52521] text-white px-5 py-2 rounded-full font-bold border-2 border-black drop-shadow-md text-sm sm:text-base">
                         ?
                       </div>
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black mt-2 sm:mt-3 leading-loose">
-                        {parseText(questions[currentQ].q)}
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-black mt-2 sm:mt-3 leading-loose tracking-wide">
+                        {parseText(questions[currentQ].q, false)}
                       </h2>
                     </div>
 
-                    {/* GRID ĐÁP ÁN - Đã đổi sang màu NÂU SÁNG & Cỡ chữ to */}
-                    <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-4 sm:mt-6 shrink-0">
+                    {/* GRID ĐÁP ÁN (Furigana TRẮNG) */}
+                    <div className="grid grid-cols-2 gap-3 sm:gap-5 mt-5 sm:mt-8 shrink-0">
                       {questions[currentQ].options.map((opt, i) => (
                         <button
                           key={i}
                           onClick={() => handleAnswer(i)}
                           disabled={isAnimating}
                           className={`
-                            p-3 sm:p-5 font-bold text-lg sm:text-2xl md:text-3xl rounded-lg border-4 transition-all duration-150 flex items-center justify-center min-h-[65px] sm:min-h-[85px]
-                            ${!isAnimating ? 'bg-[#d27d2d] border-[#8b4513] text-white hover:bg-[#e68a32] shadow-[0_4px_0_#5c2e0b]' : ''}
-                            ${isAnimating && selectedAns === i && feedback === 'correct' ? 'bg-[#00a800] border-green-800 text-white scale-105 shadow-[0_0_20px_#00ff00]' : ''}
+                            p-3 sm:p-5 font-bold text-lg sm:text-2xl md:text-3xl rounded-xl border-4 transition-all duration-150 flex items-center justify-center min-h-[70px] sm:min-h-[90px] tracking-wide game-btn
+                            ${!isAnimating ? 'bg-[#d27d2d] border-[#8b4513] text-white hover:bg-[#e68a32]' : ''}
+                            ${isAnimating && selectedAns === i && feedback === 'correct' ? 'bg-[#00a800] border-[#004d00] text-white scale-105' : ''}
                             ${isAnimating && selectedAns === i && feedback === 'wrong' ? 'bg-red-600 border-red-900 text-white' : ''}
-                            ${isAnimating && selectedAns !== i && questions[currentQ].a === i ? 'bg-[#00a800] border-green-800 text-white animate-pulse' : ''}
+                            ${isAnimating && selectedAns !== i && questions[currentQ].a === i ? 'bg-[#00a800] border-[#004d00] text-white animate-pulse' : ''}
                             ${isAnimating && selectedAns !== i && questions[currentQ].a !== i ? 'bg-gray-500 border-gray-700 text-gray-300 opacity-60' : ''}
                           `}
                         >
-                          {/* Đã bọc span để xử lý lỗi Furigana nằm cạnh chữ khi dùng Flexbox */}
-                          <span className="inline-block w-full text-center leading-loose">{parseText(opt)}</span>
+                          <span className="inline-block w-full text-center leading-loose">{parseText(opt, true)}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Mario Character */}
-                  <div className={`absolute bottom-[90px] sm:bottom-[110px] left-4 sm:left-10 transition-transform duration-300 ease-out z-30 pointer-events-none
-                    ${feedback === 'correct' ? '-translate-y-16 scale-110' : ''}
-                    ${feedback === 'wrong' ? 'scale-90 opacity-80' : ''}
-                    hidden sm:block
+                  {/* VÙNG HOẠT ẢNH: MARIO VÀ CHƯỚNG NGẠI VẬT */}
+                  
+                  {/* Mario */}
+                  <div className={`absolute bottom-[110px] left-4 sm:left-10 z-30 pointer-events-none hidden sm:block
+                    ${feedback === 'correct' ? 'animate-mario-jump' : ''}
+                    ${feedback === 'wrong' ? 'scale-90 opacity-80 grayscale' : ''}
                   `}>
                     <MarioSVG isSad={feedback === 'wrong'} />
                   </div>
 
+                  {/* Chướng ngại vật thay đổi theo chặng (Trượt qua khi trả lời đúng) */}
+                  {feedback === 'correct' && (
+                    <div className="absolute bottom-[110px] left-4 sm:left-10 z-20 pointer-events-none animate-obstacle-slide hidden sm:block flex items-end">
+                        {getObstacleSVG(currentStageNumber)}
+                    </div>
+                  )}
+
                   {/* Animation Cộng Điểm */}
                   {feedback === 'correct' && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-bounce text-[#FDE047] font-extrabold text-5xl sm:text-6xl drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-bounce text-[#FDE047] font-black text-5xl sm:text-6xl drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
                       +10 🪙
                     </div>
                   )}
                   
                   {/* Animation Sai */}
                   {feedback === 'wrong' && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse text-red-500 font-extrabold text-6xl sm:text-7xl drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse text-red-500 font-black text-6xl sm:text-7xl drop-shadow-[4px_4px_0_#000] z-50 pointer-events-none">
                       ❌
                     </div>
                   )}
                 </>
               )}
 
-              {/* MÀN HÌNH KẾT THÚC */}
+              {/* MÀN HÌNH KẾT THÚC CÓ CÔNG CHÚA */}
               {gameState === 'end' && (
-                <div className="flex-1 flex flex-col items-center justify-center z-50 text-white drop-shadow-[2px_2px_0_#000] bg-black/60 backdrop-blur-sm p-4">
-                  <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 text-[#00a800] stroke-black stroke-2 text-center">
-                    HOÀN THÀNH!
+                <div className="flex-1 flex flex-col items-center justify-center z-50 text-white drop-shadow-[2px_2px_0_#000] bg-pink-600 backdrop-blur-md p-4">
+                  <div className="flex items-end justify-center gap-6 mb-6">
+                    <MarioSVG isSad={false} />
+                    <div className="text-7xl sm:text-8xl animate-bounce drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">👸🏻</div>
+                  </div>
+                  
+                  <h1 className="text-4xl sm:text-5xl font-black mb-6 text-[#FDE047] text-center leading-snug stroke-black stroke-2">
+                    BẠN ĐÃ CỨU ĐƯỢC CÔNG CHÚA!
                   </h1>
-                  <div className="bg-[#f8d070] border-4 border-[#c84c0c] p-6 sm:p-8 rounded-2xl text-center text-black drop-shadow-none shadow-xl mb-8 w-full max-w-sm">
-                    <h2 className="text-xl sm:text-2xl font-bold mb-4">Kết quả Khóa Huấn Luyện</h2>
-                    <p className="text-3xl sm:text-4xl font-extrabold mb-2 text-[#E52521]">ĐIỂM: {score}</p>
-                    <p className="text-lg sm:text-xl font-bold flex items-center justify-center gap-2">
+                  
+                  <div className="bg-[#f8d070] border-4 border-[#c84c0c] p-6 sm:p-8 rounded-xl text-center text-black drop-shadow-none shadow-xl mb-10 w-full max-w-md">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-4">TỔNG KẾT KHÓA HUẤN LUYỆN</h2>
+                    <p className="text-4xl sm:text-5xl font-black mb-4 text-[#E52521]">ĐIỂM: {score}</p>
+                    <p className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-4 mt-4 text-[#B45309]">
                       <CoinSVG /> ĐÃ THU THẬP: {score / 10} XU
-                    </p>
-                    <p className="mt-4 font-bold text-base sm:text-lg text-gray-700">
-                      Bạn trả lời đúng {score / 10} / {questions.length} câu!
                     </p>
                   </div>
                   
                   <button 
                     onClick={startGame}
-                    className="px-6 py-4 bg-[#00a800] text-white font-bold text-xl sm:text-2xl rounded-xl border-b-8 border-green-900 hover:bg-green-500 hover:-translate-y-1 hover:border-b-[10px] active:border-b-4 active:translate-y-2 transition-all"
+                    className="px-8 py-5 bg-white text-pink-600 font-black text-xl sm:text-2xl rounded-xl game-btn border-4 border-gray-300 drop-shadow-none"
                   >
                     🔄 CHƠI LẠI TỪ ĐẦU
                   </button>
@@ -430,12 +583,11 @@
               )}
 
               {/* MẶT ĐẤT (GROUND) */}
-              <div className="shrink-0 w-full h-[90px] sm:h-[110px] bg-[#c84c0c] border-t-[10px] sm:border-t-[14px] border-[#00a800] z-10">
-                {/* Nét vẽ giả gạch */}
-                <div className="w-full h-full opacity-20" style={{ 
+              <div className="shrink-0 w-full h-[110px] bg-[#c84c0c] border-t-[10px] border-[#00a800] relative z-10">
+                <div className="w-full h-full opacity-30" style={{ 
                   backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)', 
-                  backgroundSize: '20px 20px', 
-                  backgroundPosition: '0 0, 10px 10px' 
+                  backgroundSize: '24px 24px', 
+                  backgroundPosition: '0 0, 12px 12px'
                 }}></div>
               </div>
 
